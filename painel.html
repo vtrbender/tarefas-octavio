@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel do Pai — Otávio</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --verde: #22c55e; --verde-dark: #16a34a; --verde-light: #dcfce7;
+    --amarelo: #f59e0b; --amarelo-light: #fef3c7;
+    --vermelho: #ef4444; --vermelho-light: #fee2e2;
+    --azul: #3b82f6; --azul-light: #dbeafe;
+    --roxo: #8b5cf6; --roxo-light: #ede9fe;
+    --cinza: #f8fafc; --cinza-border: #e2e8f0;
+    --texto: #1e293b; --texto-muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Nunito Sans', sans-serif; background: #f1f5f9; color: var(--texto); }
+
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0;
+    width: 240px; background: #1e293b; padding: 24px 0;
+    display: flex; flex-direction: column;
+  }
+  .sidebar-logo { padding: 0 20px 24px; border-bottom: 1px solid #334155; }
+  .sidebar-logo h1 { font-family: 'Nunito', sans-serif; font-size: 18px; font-weight: 900; color: white; }
+  .sidebar-logo p { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+  .sidebar-nav { padding: 16px 12px; flex: 1; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    font-size: 14px; font-weight: 600; color: #94a3b8;
+    cursor: pointer; transition: all 0.15s; margin-bottom: 4px;
+  }
+  .nav-item:hover { background: #334155; color: white; }
+  .nav-item.active { background: var(--verde-dark); color: white; }
+  .nav-icon { font-size: 18px; }
+
+  .main { margin-left: 240px; padding: 32px; min-height: 100vh; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-title { font-family: 'Nunito', sans-serif; font-size: 26px; font-weight: 900; margin-bottom: 8px; }
+  .page-sub { font-size: 14px; color: var(--texto-muted); margin-bottom: 28px; }
+
+  .cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: white; border-radius: 16px; padding: 20px;
+    border: 1.5px solid var(--cinza-border);
+  }
+  .stat-card .label { font-size: 12px; color: var(--texto-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-card .value { font-family: 'Nunito', sans-serif; font-size: 28px; font-weight: 900; }
+  .stat-card .sub { font-size: 12px; color: var(--texto-muted); margin-top: 4px; }
+
+  .table-card { background: white; border-radius: 16px; border: 1.5px solid var(--cinza-border); overflow: hidden; margin-bottom: 20px; }
+  .table-header { padding: 16px 20px; border-bottom: 1px solid var(--cinza-border); display: flex; justify-content: space-between; align-items: center; }
+  .table-header h2 { font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 800; }
+  table { width: 100%; border-collapse: collapse; }
+  th { background: var(--cinza); font-size: 12px; font-weight: 700; color: var(--texto-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 10px 16px; text-align: left; }
+  td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid var(--cinza-border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--cinza); }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 8px; font-size: 12px; font-weight: 700;
+  }
+  .badge-ok { background: var(--verde-light); color: var(--verde-dark); }
+  .badge-pend { background: var(--amarelo-light); color: #92400e; }
+  .badge-fora { background: #e2e8f0; color: #475569; }
+  .badge-nao { background: var(--vermelho-light); color: #991b1b; }
+
+  .foto-thumb {
+    width: 48px; height: 48px; border-radius: 8px; object-fit: cover;
+    border: 1.5px solid var(--cinza-border); cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .foto-thumb:hover { transform: scale(1.1); }
+
+  .date-nav { display: flex; align-items: center; gap: 12px; }
+  .date-nav button {
+    background: var(--cinza); border: 1.5px solid var(--cinza-border);
+    border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 16px;
+    transition: background 0.15s;
+  }
+  .date-nav button:hover { background: #e2e8f0; }
+  .date-nav span { font-family: 'Nunito', sans-serif; font-weight: 700; font-size: 15px; min-width: 160px; text-align: center; }
+
+  .mes-selector { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .mes-btn {
+    padding: 6px 14px; border-radius: 10px; border: 1.5px solid var(--cinza-border);
+    background: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s;
+  }
+  .mes-btn.active { background: var(--verde-dark); color: white; border-color: var(--verde-dark); }
+
+  .divisao-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .div-card { background: white; border-radius: 14px; padding: 16px; border: 1.5px solid var(--cinza-border); text-align: center; }
+  .div-card .pct { font-family: 'Nunito', sans-serif; font-size: 26px; font-weight: 900; }
+  .div-card .div-label { font-size: 12px; color: var(--texto-muted); margin-top: 4px; }
+  .div-card .div-valor { font-size: 14px; font-weight: 700; margin-top: 6px; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 20px; padding: 24px; max-width: 480px; width: 90%; }
+  .modal img { width: 100%; border-radius: 12px; }
+  .modal-close { float: right; background: none; border: none; font-size: 20px; cursor: pointer; }
+
+  .loading-msg { text-align: center; padding: 40px; color: var(--texto-muted); }
+
+  .config-alert { background: var(--amarelo-light); border: 1.5px solid var(--amarelo); border-radius: 12px; padding: 14px 18px; font-size: 14px; color: #78350f; margin-bottom: 20px; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 16px; }
+    .cards-grid { grid-template-columns: repeat(2,1fr); }
+    .divisao-grid { grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>Painel do Pai</h1>
+    <p>Acompanhamento Otávio</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active" onclick="showPage('hoje')" id="nav-hoje">
+      <span class="nav-icon">📅</span> Hoje
+    </div>
+    <div class="nav-item" onclick="showPage('historico')" id="nav-historico">
+      <span class="nav-icon">📊</span> Histórico
+    </div>
+    <div class="nav-item" onclick="showPage('financeiro')" id="nav-financeiro">
+      <span class="nav-icon">💰</span> Financeiro
+    </div>
+  </nav>
+</div>
+
+<div class="main">
+
+  <!-- HOJE -->
+  <div class="page active" id="page-hoje">
+    <div class="page-title">Resumo de Hoje</div>
+    <div class="page-sub" id="hoje-sub">Carregando...</div>
+
+    <div id="config-alert-hoje" class="config-alert" style="display:none">
+      ⚠️ Configure a URL do Apps Script em <strong>config.js</strong> para carregar dados reais. Por enquanto, exibindo dados de exemplo.
+    </div>
+
+    <div class="cards-grid" id="cards-hoje">
+      <div class="stat-card">
+        <div class="label">Ganho hoje</div>
+        <div class="value" id="stat-ganho" style="color:var(--verde-dark)">R$ 0</div>
+        <div class="sub">de R$ 30,50 possíveis</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Concluídas</div>
+        <div class="value" id="stat-concluidas">0/0</div>
+        <div class="sub">tarefas do dia</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Com foto</div>
+        <div class="value" id="stat-fotos" style="color:var(--azul)">0</div>
+        <div class="sub">comprovações enviadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Bônus</div>
+        <div class="value" id="stat-bonus" style="color:var(--amarelo)">—</div>
+        <div class="sub" id="stat-bonus-sub">aguardando</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header">
+        <h2>Tarefas de hoje</h2>
+        <div class="date-nav">
+          <button onclick="mudarDia(-1)">◀</button>
+          <span id="dia-label">Hoje</span>
+          <button onclick="mudarDia(1)">▶</button>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Tarefa</th>
+            <th>Status</th>
+            <th>Horário</th>
+            <th>Foto</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-hoje-body">
+          <tr><td colspan="5" class="loading-msg">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="page" id="page-historico">
+    <div class="page-title">Histórico</div>
+    <div class="page-sub">Veja o desempenho do Otávio ao longo do tempo</div>
+    <div class="table-card">
+      <div class="table-header"><h2>Últimos 30 dias</h2></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Concluídas</th>
+            <th>Ganhou</th>
+            <th>Bônus</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody id="tabela-historico">
+          <tr><td colspan="5" class="loading-msg">Carregando histórico...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- FINANCEIRO -->
+  <div class="page" id="page-financeiro">
+    <div class="page-title">Resumo Financeiro</div>
+    <div class="page-sub">Quanto o Otávio ganhou e como deve dividir</div>
+
+    <div class="mes-selector" id="mes-selector"></div>
+
+    <div class="cards-grid">
+      <div class="stat-card">
+        <div class="label">Total bruto</div>
+        <div class="value" id="fin-bruto" style="color:var(--verde-dark)">R$ 0</div>
+        <div class="sub">no mês selecionado</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Bônus ganhos</div>
+        <div class="value" id="fin-bonus" style="color:var(--amarelo)">R$ 0</div>
+        <div class="sub">dias completos</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Penalidades</div>
+        <div class="value" id="fin-multa" style="color:var(--vermelho)">R$ 0</div>
+        <div class="sub">registradas</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Total líquido</div>
+        <div class="value" id="fin-liquido" style="color:var(--roxo)">R$ 0</div>
+        <div class="sub">a receber</div>
+      </div>
+    </div>
+
+    <h2 style="font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;margin-bottom:14px">Como dividir o dinheiro</h2>
+    <div class="divisao-grid">
+      <div class="div-card">
+        <div class="pct" style="color:#6366f1">20%</div>
+        <div class="div-label">Investimento</div>
+        <div class="div-valor" id="div-invest" style="color:#6366f1">R$ 0</div>
+      </div>
+      <div class="div-card">
+        <div class="pct" style="color:var(--azul)">15%</div>
+        <div class="div-label">Poupança</div>
+        <div class="div-valor" id="div-poup" style="color:var(--azul)">R$ 0</div>
+      </div>
+      <div class="div-card">
+        <div class="pct" style="color:var(--amarelo)">15%</div>
+        <div class="div-label">Aquisição</div>
+        <div class="div-valor" id="div-aquis" style="color:var(--amarelo)">R$ 0</div>
+      </div>
+      <div class="div-card">
+        <div class="pct" style="color:var(--verde-dark)">50%</div>
+        <div class="div-label">Gastar</div>
+        <div class="div-valor" id="div-gasto" style="color:var(--verde-dark)">R$ 0</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h2>📚 Leitura semanal</h2></div>
+      <table>
+        <thead>
+          <tr><th>Semana</th><th>Dias lidos</th><th>Resultado</th><th>Valor</th></tr>
+        </thead>
+        <tbody id="tabela-leitura-semanas">
+          <tr><td colspan="4" class="loading-msg">Selecione um mês acima</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <div class="table-header"><h2>Detalhe por dia</h2></div>
+      <table>
+        <thead>
+          <tr><th>Data</th><th>Tarefas feitas</th><th>Valor</th><th>Bônus</th><th>Total dia</th></tr>
+        </thead>
+        <tbody id="tabela-fin-dias">
+          <tr><td colspan="5" class="loading-msg">Selecione um mês acima</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Modal foto -->
+<div class="modal-overlay" id="modal-foto" onclick="fecharModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <button class="modal-close" onclick="fecharModal()">✕</button>
+    <p style="font-weight:700;margin-bottom:12px" id="modal-titulo">Foto</p>
+    <img id="modal-img" src="" alt="Comprovação">
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script>
+const TAREFAS_DEF = [
+  { id:'cama',    nome:'Arrumar a cama',         emoji:'🛏️',  valor:1.0,  freq:'diario',     foto:true,  valorSemanal:false },
+  { id:'louca',   nome:'Lavar a louça',           emoji:'🍽️',  valor:3.0,  freq:'diario',     foto:true,  valorSemanal:false },
+  { id:'quarto',  nome:'Organizar o quarto',      emoji:'🧹',  valor:4.0,  freq:'seg,qua',    foto:true,  valorSemanal:false },
+  { id:'lixo',    nome:'Colocar lixo na rua',     emoji:'🗑️',  valor:2.0,  freq:'seg,qua,sex',foto:false, valorSemanal:false },
+  { id:'pet',     nome:'Alimentar o pet',         emoji:'🐾',  valor:0.5,  freq:'diario',     foto:true,  valorSemanal:false },
+  { id:'limpeza', nome:'Ajudar na limpeza geral', emoji:'🧽',  valor:7.0,  freq:'1x_semana',  foto:false, valorSemanal:false },
+  { id:'patio',   nome:'Limpar o pátio',          emoji:'🌿',  valor:3.0,  freq:'seg,qua,sex',foto:false, valorSemanal:false },
+  { id:'leitura', nome:'Leitura diária',          emoji:'📚',  valor:0,    freq:'diario',     foto:true,  valorSemanal:true, valorSemanalVal:10.0 },
+];
+
+function diasDaSemana(dateStr) {
+  const d = new Date(dateStr+'T12:00:00');
+  const dia = d.getDay();
+  const diffSeg = dia === 0 ? -6 : 1 - dia;
+  const seg = new Date(d); seg.setDate(d.getDate() + diffSeg);
+  return Array.from({length:7}, (_,i) => {
+    const x = new Date(seg); x.setDate(seg.getDate()+i);
+    return x.toISOString().slice(0,10);
+  });
+}
+
+function leituraCompletaSemana(semana) {
+  return semana.every(dateKey => {
+    const e = getEstadoDia(dateKey);
+    const el = e['leitura'] || {};
+    return el.done || el.fora;
+  });
+}
+
+// Retorna semanas (seg-dom) dentro de um mês — array de arrays de dateStrings
+function semanasDomes(ano, mes) {
+  const semanas = [];
+  const vistas = new Set();
+  const diasNoMes = new Date(ano, mes+1, 0).getDate();
+  for(let d=1; d<=diasNoMes; d++) {
+    const date = new Date(ano, mes, d);
+    const key = date.toISOString().slice(0,10);
+    const sem = diasDaSemana(key);
+    const semKey = sem[0];
+    if(!vistas.has(semKey)) { vistas.add(semKey); semanas.push(sem); }
+  }
+  return semanas;
+}
+const DIAS = ['dom','seg','ter','qua','qui','sex','sab'];
+const MESES_NOME = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+let diaOffset = 0;
+let mesSelecionado = new Date().getMonth();
+let anoSelecionado = new Date().getFullYear();
+
+function showPage(nome) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+nome).classList.add('active');
+  document.getElementById('nav-'+nome).classList.add('active');
+  if(nome==='financeiro') renderFinanceiro();
+  if(nome==='historico') renderHistorico();
+}
+
+function formatBRL(v) { return 'R$ '+v.toFixed(2).replace('.',','); }
+
+function getDiaKey(offset) {
+  const d = new Date(); d.setDate(d.getDate()+offset);
+  return d.toISOString().slice(0,10);
+}
+
+function tarefaAplicaDia(t, dateStr) {
+  const d = new Date(dateStr+'T12:00:00');
+  const diaKey = DIAS[d.getDay()];
+  if(t.freq==='diario') return true;
+  if(t.freq==='1x_semana') return diaKey==='seg';
+  return t.freq.split(',').includes(diaKey);
+}
+
+function getEstadoDia(dateKey) {
+  const raw = localStorage.getItem('otavio_'+dateKey);
+  return raw ? JSON.parse(raw) : {};
+}
+
+function mudarDia(delta) {
+  diaOffset += delta;
+  if(diaOffset > 0) diaOffset = 0;
+  renderHoje();
+}
+
+function renderHoje() {
+  const dateKey = getDiaKey(diaOffset);
+  const d = new Date(dateKey+'T12:00:00');
+  const label = diaOffset===0 ? 'Hoje' : diaOffset===-1 ? 'Ontem' : d.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'});
+  document.getElementById('dia-label').textContent = label;
+  document.getElementById('hoje-sub').textContent = d.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  const estado = getEstadoDia(dateKey);
+  const tarefasDia = TAREFAS_DEF.filter(t=>tarefaAplicaDia(t,dateKey));
+  
+  const semanaAtual = diasDaSemana(dateKey);
+  const leituraSemanaOk = leituraCompletaSemana(semanaAtual);
+  let ganho=0, concl=0, comFoto=0, aplicaveis=0;
+  const rows = tarefasDia.map(t => {
+    const e = estado[t.id]||{};
+    if(!e.fora) aplicaveis++;
+    let badge='', valorExibir=0;
+    if(e.fora) { badge='<span class="badge badge-fora">✈️ Fora</span>'; }
+    else if(e.done) {
+      badge='<span class="badge badge-ok">✅ Feito</span>';
+      concl++;
+      if(e.fotoUrl) comFoto++;
+      if(!t.valorSemanal) { ganho+=t.valor; valorExibir=t.valor; }
+    }
+    else { badge='<span class="badge badge-pend">⏳ Pendente</span>'; }
+    
+    let valorCell;
+    if(t.valorSemanal) {
+      const dom = new Date(dateKey+'T12:00:00').getDay()===0;
+      valorCell = `<span style="color:#6d28d9;font-size:12px;font-weight:600">${dom && leituraSemanaOk ? '✅ R$ 10,00' : '📅 R$ 10/semana'}</span>`;
+    } else {
+      valorCell = `<span style="font-weight:700;color:${valorExibir>0?'var(--verde-dark)':'var(--texto-muted)'}">${valorExibir>0?formatBRL(valorExibir):'—'}</span>`;
+    }
+    const fotoCell = e.fotoUrl && !e.fotoUrl.startsWith('local:') ? 
+      `<img class="foto-thumb" src="${e.fotoUrl}" onclick="abrirFoto('${e.fotoUrl}','${t.nome}')">` :
+      e.fotoUrl ? '📷 local' : (t.foto ? '—' : 'N/A');
+    return `<tr>
+      <td><span style="font-size:18px">${t.emoji}</span> ${t.nome}</td>
+      <td>${badge}</td>
+      <td style="color:var(--texto-muted)">${e.hora||'—'}</td>
+      <td>${fotoCell}</td>
+      <td>${valorCell}</td>
+    </tr>`;
+  }).join('');
+  // Adiciona leitura semanal ao ganho se hoje é domingo e semana completa
+  const ehDomingo = new Date(dateKey+'T12:00:00').getDay()===0;
+  if(ehDomingo && leituraSemanaOk) ganho+=10;
+
+  document.getElementById('tabela-hoje-body').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:var(--texto-muted);padding:20px">Nenhuma tarefa para este dia</td></tr>';
+  document.getElementById('stat-ganho').textContent = formatBRL(ganho);
+  document.getElementById('stat-concluidas').textContent = concl+'/'+aplicaveis;
+  document.getElementById('stat-fotos').textContent = comFoto;
+  
+  const bonusGanho = concl===aplicaveis && aplicaveis>0;
+  document.getElementById('stat-bonus').textContent = bonusGanho ? '+R$ 30' : '—';
+  document.getElementById('stat-bonus').style.color = bonusGanho ? 'var(--verde-dark)' : 'var(--amarelo)';
+  document.getElementById('stat-bonus-sub').textContent = bonusGanho ? '🎉 conquistado!' : `faltam ${aplicaveis-concl}`;
+}
+
+function renderHistorico() {
+  const hoje = new Date();
+  let rows = '';
+  for(let i=0; i<30; i++) {
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const key = d.toISOString().slice(0,10);
+    const estado = getEstadoDia(key);
+    const tarefasDia = TAREFAS_DEF.filter(t=>tarefaAplicaDia(t,key));
+    let ganho=0, concl=0, aplicaveis=0;
+    tarefasDia.forEach(t => {
+      const e=estado[t.id]||{};
+      if(!e.fora) aplicaveis++;
+      if(e.done && !e.fora) { ganho+=t.valor; concl++; }
+    });
+    if(aplicaveis===0) continue;
+    const bonusGanho = concl===aplicaveis;
+    const total = ganho + (bonusGanho?30:0);
+    rows += `<tr>
+      <td>${d.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'})}</td>
+      <td>${concl}/${aplicaveis} <span style="color:var(--texto-muted);font-size:12px">(${Math.round(concl/aplicaveis*100)}%)</span></td>
+      <td style="color:var(--verde-dark);font-weight:700">${formatBRL(ganho)}</td>
+      <td>${bonusGanho?'<span class="badge badge-ok">+R$ 30</span>':'<span class="badge badge-nao">Não</span>'}</td>
+      <td style="font-weight:800;color:var(--roxo)">${formatBRL(total)}</td>
+    </tr>`;
+  }
+  document.getElementById('tabela-historico').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--texto-muted)">Nenhum dado ainda</td></tr>';
+}
+
+function renderMesSelector() {
+  const hoje = new Date();
+  let html = '';
+  for(let i=0; i<6; i++) {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
+    const m = d.getMonth(), a = d.getFullYear();
+    const ativo = m===mesSelecionado && a===anoSelecionado;
+    html += `<button class="mes-btn${ativo?' active':''}" onclick="selecionarMes(${m},${a})">${MESES_NOME[m]} ${a}</button>`;
+  }
+  document.getElementById('mes-selector').innerHTML = html;
+}
+
+function selecionarMes(m, a) {
+  mesSelecionado=m; anoSelecionado=a;
+  renderMesSelector();
+  renderFinanceiro();
+}
+
+function renderFinanceiro() {
+  renderMesSelector();
+  const semanas = semanasDomes(anoSelecionado, mesSelecionado);
+  const diasNoMes = new Date(anoSelecionado, mesSelecionado+1, 0).getDate();
+  let totalBruto=0, totalBonus=0, rows='';
+
+  // Calcula leitura por semana
+  const leiturasSemanais = semanas.map(sem => {
+    const domKey = sem[6];
+    const completa = leituraCompletaSemana(sem);
+    return { sem, domKey, completa };
+  });
+
+  for(let d=1; d<=diasNoMes; d++) {
+    const date = new Date(anoSelecionado, mesSelecionado, d);
+    if(date > new Date()) continue;
+    const key = date.toISOString().slice(0,10);
+    const estado = getEstadoDia(key);
+    const tarefasDia = TAREFAS_DEF.filter(t=>tarefaAplicaDia(t,key));
+    let ganho=0, concl=0, aplicaveis=0;
+    tarefasDia.forEach(t => {
+      const e=estado[t.id]||{};
+      if(!e.fora) aplicaveis++;
+      if(e.done && !e.fora && !t.valorSemanal) { ganho+=t.valor; concl++; }
+      else if(e.done && !e.fora && t.valorSemanal) concl++;
+    });
+    if(date.getDay()===0) {
+      const ls = leiturasSemanais.find(l=>l.domKey===key);
+      if(ls && ls.completa) ganho+=10;
+    }
+    if(aplicaveis===0) continue;
+    const bonusGanho = concl===aplicaveis;
+    const bonus = bonusGanho?30:0;
+    totalBruto+=ganho; totalBonus+=bonus;
+    const totalDia=ganho+bonus;
+    rows+=`<tr>
+      <td>${date.toLocaleDateString('pt-BR',{weekday:'short',day:'numeric'})}</td>
+      <td>${concl}/${aplicaveis}</td>
+      <td>${formatBRL(ganho)}</td>
+      <td>${bonusGanho?'<span class="badge badge-ok">+R$ 30</span>':'—'}</td>
+      <td style="font-weight:700">${formatBRL(totalDia)}</td>
+    </tr>`;
+  }
+
+  // Leitura semanal
+  let rowsLeitura = leiturasSemanais.map(ls => {
+    const seg = new Date(ls.sem[0]+'T12:00:00');
+    const dom = new Date(ls.sem[6]+'T12:00:00');
+    const diasFeitos = ls.sem.filter(dk=>{const e=getEstadoDia(dk);return e['leitura']?.done||e['leitura']?.fora;}).length;
+    const badge = ls.completa ? '<span class="badge badge-ok">✅ Ganhou R$ 10</span>' :
+      dom > new Date() ? '<span class="badge badge-pend">⏳ Em andamento</span>' :
+      '<span class="badge badge-nao">❌ Não ganhou</span>';
+    return `<tr>
+      <td>${seg.toLocaleDateString('pt-BR',{day:'numeric',month:'short'})} → ${dom.toLocaleDateString('pt-BR',{day:'numeric',month:'short'})}</td>
+      <td>${diasFeitos}/7 dias</td>
+      <td>${badge}</td>
+      <td style="font-weight:700;color:${ls.completa?'var(--verde-dark)':'var(--texto-muted)'}">${ls.completa?'R$ 10,00':'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const liquido = totalBruto+totalBonus;
+  document.getElementById('fin-bruto').textContent = formatBRL(totalBruto);
+  document.getElementById('fin-bonus').textContent = formatBRL(totalBonus);
+  document.getElementById('fin-multa').textContent = 'R$ 0,00';
+  document.getElementById('fin-liquido').textContent = formatBRL(liquido);
+  document.getElementById('div-invest').textContent = formatBRL(liquido*0.20);
+  document.getElementById('div-poup').textContent = formatBRL(liquido*0.15);
+  document.getElementById('div-aquis').textContent = formatBRL(liquido*0.15);
+  document.getElementById('div-gasto').textContent = formatBRL(liquido*0.50);
+  document.getElementById('tabela-fin-dias').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--texto-muted)">Nenhum dado para este mês</td></tr>';
+  const tbl = document.getElementById('tabela-leitura-semanas');
+  if(tbl) tbl.innerHTML = rowsLeitura || '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--texto-muted)">Nenhuma semana ainda</td></tr>';
+}
+
+function abrirFoto(url, nome) {
+  document.getElementById('modal-titulo').textContent = nome;
+  document.getElementById('modal-img').src = url;
+  document.getElementById('modal-foto').classList.add('open');
+}
+function fecharModal() { document.getElementById('modal-foto').classList.remove('open'); }
+
+if(typeof APPS_SCRIPT_URL==='undefined'||!APPS_SCRIPT_URL) {
+  document.getElementById('config-alert-hoje').style.display='block';
+}
+
+renderHoje();
+</script>
+</body>
+</html>

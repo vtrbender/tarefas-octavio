@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Tarefas do Otávio</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Nunito+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --verde: #22c55e;
+    --verde-dark: #16a34a;
+    --verde-light: #dcfce7;
+    --amarelo: #f59e0b;
+    --amarelo-light: #fef3c7;
+    --vermelho: #ef4444;
+    --vermelho-light: #fee2e2;
+    --azul: #3b82f6;
+    --azul-light: #dbeafe;
+    --cinza: #f8fafc;
+    --cinza-border: #e2e8f0;
+    --texto: #1e293b;
+    --texto-muted: #64748b;
+    --bg: #f0fdf4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito Sans', sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+    min-height: 100vh;
+    padding-bottom: 32px;
+  }
+  .header {
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%);
+    padding: 24px 20px 32px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: 0; right: 0;
+    height: 40px;
+    background: var(--bg);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .greeting { font-family: 'Nunito', sans-serif; }
+  .greeting h1 { font-size: 24px; font-weight: 900; }
+  .greeting p { font-size: 13px; opacity: 0.85; margin-top: 2px; }
+  .total-badge {
+    background: rgba(255,255,255,0.25);
+    border: 1.5px solid rgba(255,255,255,0.4);
+    border-radius: 12px;
+    padding: 8px 14px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+  }
+  .total-badge .valor { font-family: 'Nunito', sans-serif; font-size: 20px; font-weight: 900; }
+  .total-badge .label { font-size: 10px; opacity: 0.85; letter-spacing: 0.5px; }
+  .progress-section { margin-top: 16px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 12px; opacity: 0.9; margin-bottom: 6px; }
+  .progress-bar-bg { background: rgba(255,255,255,0.3); border-radius: 10px; height: 8px; overflow: hidden; }
+  .progress-bar-fill { background: white; border-radius: 10px; height: 100%; transition: width 0.5s ease; }
+
+  .content { padding: 16px; }
+
+  .section-title {
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--texto-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 20px 0 10px;
+  }
+
+  .task-card {
+    background: white;
+    border-radius: 16px;
+    border: 1.5px solid var(--cinza-border);
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .task-card.done { border-color: var(--verde); }
+  .task-card.fora { border-color: #cbd5e1; opacity: 0.6; }
+  .task-card.done .task-main { background: var(--verde-light); }
+
+  .task-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+  }
+  .task-emoji {
+    font-size: 28px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cinza);
+    border-radius: 12px;
+    flex-shrink: 0;
+  }
+  .task-info { flex: 1; min-width: 0; }
+  .task-name {
+    font-family: 'Nunito', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--texto);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .task-meta { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .tag-foto { background: var(--azul-light); color: #1d4ed8; }
+  .tag-freq { background: var(--amarelo-light); color: #92400e; }
+  .task-valor {
+    font-family: 'Nunito', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: var(--verde-dark);
+    white-space: nowrap;
+  }
+  .task-valor.done-val { color: #15803d; }
+
+  .task-actions {
+    border-top: 1px solid var(--cinza-border);
+    padding: 10px 14px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .btn {
+    border: none;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: transform 0.1s, opacity 0.1s;
+  }
+  .btn:active { transform: scale(0.96); }
+  .btn-concluir { background: var(--verde); color: white; flex: 1; justify-content: center; }
+  .btn-foto { background: var(--azul); color: white; flex: 1; justify-content: center; }
+  .btn-desfazer { background: var(--cinza); color: var(--texto-muted); font-size: 12px; padding: 8px 10px; }
+  .btn-fora {
+    background: var(--cinza);
+    color: var(--texto-muted);
+    font-size: 12px;
+    padding: 8px 10px;
+    margin-left: auto;
+  }
+  .btn-fora.ativo { background: #e2e8f0; color: #334155; }
+
+  .foto-preview {
+    padding: 0 14px 10px;
+    display: none;
+  }
+  .foto-preview img {
+    width: 100%;
+    max-height: 150px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--cinza-border);
+  }
+  .foto-preview.visible { display: block; }
+
+  input[type="file"] { display: none; }
+
+  .bonus-card {
+    background: linear-gradient(135deg, #f59e0b, #f97316);
+    border-radius: 16px;
+    padding: 16px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .bonus-icon { font-size: 36px; }
+  .bonus-info h3 { font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 900; }
+  .bonus-info p { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+  .bonus-val { margin-left: auto; font-family: 'Nunito', sans-serif; font-size: 22px; font-weight: 900; }
+
+  .regras-card {
+    background: white;
+    border-radius: 16px;
+    border: 1.5px solid var(--cinza-border);
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+  .regra-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--cinza-border);
+    font-size: 13px;
+  }
+  .regra-item:last-child { border-bottom: none; }
+  .regra-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  .divisao-card {
+    background: white;
+    border-radius: 16px;
+    border: 1.5px solid var(--cinza-border);
+    padding: 16px;
+  }
+  .divisao-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--cinza-border); }
+  .divisao-item:last-child { border-bottom: none; }
+  .divisao-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .divisao-label { font-size: 13px; flex: 1; }
+  .divisao-pct { font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 15px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1e293b;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .uploading { opacity: 0.6; pointer-events: none; }
+  .check-icon { font-size: 20px; }
+
+  .config-banner {
+    background: #fef3c7;
+    border: 1.5px solid #f59e0b;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #92400e;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .config-banner.visible { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="greeting">
+      <h1>Oi, Otávio! 👋</h1>
+      <p id="data-hoje">carregando...</p>
+    </div>
+    <div class="total-badge">
+      <div class="valor" id="total-hoje">R$ 0,00</div>
+      <div class="label">HOJE</div>
+    </div>
+  </div>
+  <div class="progress-section">
+    <div class="progress-label">
+      <span id="progresso-texto">0 tarefas concluídas</span>
+      <span id="progresso-pct">0%</span>
+    </div>
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="config-banner" id="config-banner">
+    ⚠️ Configure a URL do Apps Script em <code>config.js</code> para ativar o salvamento online.
+  </div>
+
+  <div id="tarefas-container">
+    <div style="text-align:center; padding: 40px; color: var(--texto-muted);">
+      <div style="font-size:32px">⏳</div>
+      <p style="margin-top:8px">Carregando tarefas...</p>
+    </div>
+  </div>
+
+  <div class="section-title">🏆 Bônus do dia</div>
+  <div class="bonus-card" id="bonus-card">
+    <div class="bonus-icon">⭐</div>
+    <div class="bonus-info">
+      <h3>Bônus especial</h3>
+      <p id="bonus-status">Complete tudo pra ganhar!</p>
+    </div>
+    <div class="bonus-val">R$ 30</div>
+  </div>
+
+  <div class="section-title">📋 Regras</div>
+  <div class="regras-card">
+    <div class="regra-item"><span class="regra-icon">✅</span><span>Se não mandar no grupo, <strong>não conta</strong></span></div>
+    <div class="regra-item"><span class="regra-icon">🔄</span><span>Se fizer mal feito, refaz, perde o valor e perde bônus</span></div>
+    <div class="regra-item"><span class="regra-icon">📱</span><span>Passou do tempo de tela: perde bônus e <strong>multa de 30%</strong></span></div>
+    <div class="regra-item"><span class="regra-icon">❌</span><span>Se for pedido e não fizer: não recebe e perde bônus</span></div>
+    <div class="regra-item"><span class="regra-icon">📚</span><span>Média acima de 9,0 no boletim: bônus extra (a combinar)</span></div>
+  </div>
+
+  <div class="section-title">💰 Divisão do dinheiro</div>
+  <div class="divisao-card">
+    <div class="divisao-item">
+      <div class="divisao-dot" style="background:#6366f1"></div>
+      <div class="divisao-label">Investimento longo prazo</div>
+      <div class="divisao-pct" style="color:#6366f1">20%</div>
+    </div>
+    <div class="divisao-item">
+      <div class="divisao-dot" style="background:#0ea5e9"></div>
+      <div class="divisao-label">Poupança</div>
+      <div class="divisao-pct" style="color:#0ea5e9">15%</div>
+    </div>
+    <div class="divisao-item">
+      <div class="divisao-dot" style="background:#f59e0b"></div>
+      <div class="divisao-label">Aquisição (fone, etc)</div>
+      <div class="divisao-pct" style="color:#f59e0b">15%</div>
+    </div>
+    <div class="divisao-item">
+      <div class="divisao-dot" style="background:#22c55e"></div>
+      <div class="divisao-label">Gastar à vontade</div>
+      <div class="divisao-pct" style="color:#22c55e">50%</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+const TAREFAS_DEF = [
+  { id:'cama',    nome:'Arrumar a cama',         emoji:'🛏️',  valor:1.0,  freq:'diario',     foto:true,  valorSemanal:false },
+  { id:'louca',   nome:'Lavar a louça',           emoji:'🍽️',  valor:3.0,  freq:'diario',     foto:true,  valorSemanal:false },
+  { id:'quarto',  nome:'Organizar o quarto',      emoji:'🧹',  valor:4.0,  freq:'seg,qua',    foto:true,  valorSemanal:false },
+  { id:'lixo',    nome:'Colocar lixo na rua',     emoji:'🗑️',  valor:2.0,  freq:'seg,qua,sex',foto:false, valorSemanal:false },
+  { id:'pet',     nome:'Alimentar o pet',         emoji:'🐾',  valor:0.5,  freq:'diario',     foto:true,  valorSemanal:false },
+  { id:'limpeza', nome:'Ajudar na limpeza geral', emoji:'🧽',  valor:7.0,  freq:'1x_semana',  foto:false, valorSemanal:false },
+  { id:'patio',   nome:'Limpar o pátio',          emoji:'🌿',  valor:3.0,  freq:'seg,qua,sex',foto:false, valorSemanal:false },
+  { id:'leitura', nome:'Leitura diária',          emoji:'📚',  valor:0,    freq:'diario',     foto:true,  valorSemanal:true, valorSemanalVal:10.0 },
+];
+
+// Retorna o domingo da semana de uma data (início da semana = segunda, fechamento = domingo)
+function domingoSemana(date) {
+  const d = new Date(date);
+  const dia = d.getDay(); // 0=dom
+  // queremos o domingo que fecha a semana (seg a dom)
+  const diff = dia === 0 ? 0 : 7 - dia;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0,10);
+}
+
+// Retorna array de datas de seg a dom da semana de uma data
+function diasDaSemana(dateStr) {
+  const d = new Date(dateStr+'T12:00:00');
+  const dia = d.getDay();
+  // encontra a segunda-feira da semana
+  const diffSeg = dia === 0 ? -6 : 1 - dia;
+  const seg = new Date(d); seg.setDate(d.getDate() + diffSeg);
+  return Array.from({length:7}, (_,i) => {
+    const x = new Date(seg); x.setDate(seg.getDate()+i);
+    return x.toISOString().slice(0,10);
+  });
+}
+
+// Verifica se leitura foi feita todos os dias da semana (seg-dom)
+function leituraCompletaSemana(semana) {
+  return semana.every(dateKey => {
+    const e = JSON.parse(localStorage.getItem('otavio_'+dateKey)||'{}');
+    const el = e['leitura'] || {};
+    return el.done || el.fora;
+  });
+}
+
+// Valor da leitura que aparece no totalizador do dia:
+// só conta R$10 se for domingo E a semana estiver completa
+function valorLeituraHoje() {
+  if(hoje.getDay() !== 0) return 0; // só no domingo
+  const semana = diasDaSemana(hoje.toISOString().slice(0,10));
+  return leituraCompletaSemana(semana) ? 10.0 : 0;
+}
+
+const DIAS_SEMANA = ['dom','seg','ter','qua','qui','sex','sab'];
+const hoje = new Date();
+const diaKey = DIAS_SEMANA[hoje.getDay()];
+const dataStr = hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+document.getElementById('data-hoje').textContent = dataStr.charAt(0).toUpperCase()+dataStr.slice(1);
+
+function tarefaAplicaHoje(t) {
+  if(t.freq === 'diario') return true;
+  if(t.freq === '1x_semana') return diaKey === 'seg';
+  return t.freq.split(',').includes(diaKey);
+}
+
+const chaveHoje = `otavio_${hoje.toISOString().slice(0,10)}`;
+let estado = JSON.parse(localStorage.getItem(chaveHoje) || '{}');
+
+function salvarEstado() {
+  localStorage.setItem(chaveHoje, JSON.stringify(estado));
+  if(typeof APPS_SCRIPT_URL !== 'undefined' && APPS_SCRIPT_URL) {
+    fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({ action:'salvar', data: chaveHoje, estado })
+    }).catch(()=>{});
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+function formatBRL(v) {
+  return 'R$ '+v.toFixed(2).replace('.',',');
+}
+
+function atualizarTotais() {
+  const tarefasHoje = TAREFAS_DEF.filter(tarefaAplicaHoje);
+  let totalGanho = 0, concluidas = 0, aplicaveis = 0;
+  tarefasHoje.forEach(t => {
+    const e = estado[t.id] || {};
+    if(!e.fora) aplicaveis++;
+    if(e.done && !e.fora) {
+      concluidas++;
+      if(t.valorSemanal) {
+        totalGanho += valorLeituraHoje();
+      } else {
+        totalGanho += t.valor;
+      }
+    }
+  });
+  document.getElementById('total-hoje').textContent = formatBRL(totalGanho);
+  document.getElementById('progresso-texto').textContent = `${concluidas} de ${aplicaveis} concluídas`;
+  const pct = aplicaveis > 0 ? Math.round((concluidas/aplicaveis)*100) : 0;
+  document.getElementById('progresso-pct').textContent = pct+'%';
+  document.getElementById('progress-fill').style.width = pct+'%';
+  
+  const bonus = document.getElementById('bonus-card');
+  const bonusStatus = document.getElementById('bonus-status');
+  if(concluidas === aplicaveis && aplicaveis > 0) {
+    bonus.style.background = 'linear-gradient(135deg, #16a34a, #22c55e)';
+    bonusStatus.textContent = '🎉 Bônus conquistado! +R$ 30,00';
+  } else {
+    bonus.style.background = 'linear-gradient(135deg, #f59e0b, #f97316)';
+    bonusStatus.textContent = `Faltam ${aplicaveis - concluidas} tarefa(s) pra garantir!`;
+  }
+}
+
+async function uploadFoto(tarefaId, file) {
+  if(!file) return null;
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      if(typeof APPS_SCRIPT_URL === 'undefined' || !APPS_SCRIPT_URL) {
+        resolve('local:'+file.name);
+        return;
+      }
+      try {
+        const res = await fetch(APPS_SCRIPT_URL, {
+          method:'POST',
+          body: JSON.stringify({
+            action:'uploadFoto',
+            data: chaveHoje,
+            tarefaId,
+            fileName: file.name,
+            mimeType: file.type,
+            base64: reader.result.split(',')[1]
+          })
+        });
+        const json = await res.json();
+        resolve(json.url || null);
+      } catch(e) {
+        resolve('local:'+file.name);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderTarefas() {
+  const container = document.getElementById('tarefas-container');
+  const tarefasHoje = TAREFAS_DEF.filter(tarefaAplicaHoje);
+  const pendentes = tarefasHoje.filter(t => !(estado[t.id]?.done) && !(estado[t.id]?.fora));
+  const concluidas = tarefasHoje.filter(t => estado[t.id]?.done);
+  const foras = tarefasHoje.filter(t => estado[t.id]?.fora);
+
+  let html = '';
+
+  if(pendentes.length > 0) {
+    html += `<div class="section-title">📝 Para fazer hoje</div>`;
+    pendentes.forEach(t => { html += renderCard(t); });
+  }
+  if(concluidas.length > 0) {
+    html += `<div class="section-title">✅ Concluídas</div>`;
+    concluidas.forEach(t => { html += renderCard(t); });
+  }
+  if(foras.length > 0) {
+    html += `<div class="section-title">🏠 Fora de casa</div>`;
+    foras.forEach(t => { html += renderCard(t); });
+  }
+
+  container.innerHTML = html;
+
+  tarefasHoje.forEach(t => {
+    const e = estado[t.id] || {};
+    if(e.fotoUrl && e.fotoUrl.startsWith('blob:')) {
+      const preview = document.getElementById('preview-'+t.id);
+      if(preview) {
+        preview.src = e.fotoUrl;
+        preview.parentElement.classList.add('visible');
+      }
+    }
+  });
+
+  atualizarTotais();
+}
+
+function renderCard(t) {
+  const e = estado[t.id] || {};
+  const done = e.done;
+  const fora = e.fora;
+  return `
+  <div class="task-card${done?' done':''}${fora?' fora':''}" id="card-${t.id}">
+    <div class="task-main">
+      <div class="task-emoji">${done ? '✅' : t.emoji}</div>
+      <div class="task-info">
+        <div class="task-name">${t.nome}</div>
+        <div class="task-meta">
+          ${t.foto ? '<span class="tag tag-foto">📷 foto</span>' : ''}
+          ${t.valorSemanal ? '<span class="tag" style="background:#ede9fe;color:#6d28d9">📅 R$ 10 na semana</span>' : ''}
+          <span class="tag tag-freq">${freqLabel(t.freq)}</span>
+        </div>
+      </div>
+      <div class="task-valor${done?' done-val':''}">${t.valorSemanal ? (done && hoje.getDay()===0 && valorLeituraHoje()>0 ? formatBRL(10) : '—') : formatBRL(t.valor)}</div>
+    </div>
+    ${e.fotoUrl && !e.fotoUrl.startsWith('local:') && !e.fotoUrl.startsWith('blob:') ? `
+    <div class="foto-preview visible">
+      <img src="${e.fotoUrl}" alt="Comprovação">
+    </div>` : e.fotoUrl ? `
+    <div class="foto-preview visible" id="preview-wrap-${t.id}">
+      <img id="preview-${t.id}" src="" alt="Comprovação">
+    </div>` : ''}
+    <div class="task-actions">
+      ${!fora ? (done ? `
+        <button class="btn btn-desfazer" onclick="desfazer('${t.id}')">↩ Desfazer</button>
+      ` : (t.foto ? `
+        <input type="file" id="file-${t.id}" accept="image/*" capture="environment" onchange="handleFoto('${t.id}', this)">
+        <button class="btn btn-foto" onclick="document.getElementById('file-${t.id}').click()">📷 Enviar foto</button>
+        <button class="btn btn-concluir" onclick="concluirSemFoto('${t.id}')">✓ Feito</button>
+      ` : `
+        <button class="btn btn-concluir" onclick="concluir('${t.id}')">✓ Marcar como feito</button>
+      `)) : ''}
+      <button class="btn btn-fora${fora?' ativo':''}" onclick="toggleFora('${t.id}')" title="Fora de casa">
+        ${fora ? '🏠 Em casa' : '✈️ Fora'}
+      </button>
+    </div>
+  </div>`;
+}
+
+function freqLabel(freq) {
+  if(freq==='diario') return 'Todo dia';
+  if(freq==='1x_semana') return '1× semana';
+  const dias = freq.split(',');
+  const map = {seg:'Seg',ter:'Ter',qua:'Qua',qui:'Qui',sex:'Sex',sab:'Sáb',dom:'Dom'};
+  return dias.map(d=>map[d]||d).join('/');
+}
+
+function concluir(id, fotoUrl) {
+  estado[id] = { done: true, hora: new Date().toTimeString().slice(0,5), fotoUrl: fotoUrl || null, fora: false };
+  salvarEstado();
+  renderTarefas();
+  showToast('✅ Tarefa concluída!');
+}
+
+function concluirSemFoto(id) {
+  concluir(id, null);
+}
+
+async function handleFoto(id, input) {
+  const file = input.files[0];
+  if(!file) return;
+  const card = document.getElementById('card-'+id);
+  card.classList.add('uploading');
+  showToast('📤 Enviando foto...');
+  
+  // Show local preview immediately
+  const blobUrl = URL.createObjectURL(file);
+  estado[id] = { ...estado[id], fotoUrl: blobUrl };
+  
+  const url = await uploadFoto(id, file);
+  concluir(id, url || blobUrl);
+  card.classList.remove('uploading');
+}
+
+function desfazer(id) {
+  delete estado[id];
+  salvarEstado();
+  renderTarefas();
+  showToast('↩ Tarefa reaberta');
+}
+
+function toggleFora(id) {
+  const e = estado[id] || {};
+  if(e.fora) {
+    delete estado[id];
+  } else {
+    estado[id] = { fora: true };
+  }
+  salvarEstado();
+  renderTarefas();
+  showToast(e.fora ? '🏠 De volta em casa!' : '✈️ Marcado como fora de casa');
+}
+
+// Verificar config
+if(typeof APPS_SCRIPT_URL === 'undefined' || !APPS_SCRIPT_URL) {
+  document.getElementById('config-banner').classList.add('visible');
+}
+
+renderTarefas();
+</script>
+</body>
+</html>
