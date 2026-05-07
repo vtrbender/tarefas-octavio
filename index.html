@@ -250,6 +250,37 @@
   .uploading { opacity: 0.6; pointer-events: none; }
   .check-icon { font-size: 20px; }
 
+  .sync-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Nunito Sans', sans-serif;
+    z-index: 50;
+    background: white;
+    border-top: 1px solid var(--cinza-border);
+    transition: background 0.3s;
+  }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; transition: background 0.3s; }
+  .sync-bar.ok { background: #f0fdf4; }
+  .sync-bar.ok .sync-dot { background: var(--verde); }
+  .sync-bar.ok .sync-label { color: var(--verde-dark); }
+  .sync-bar.syncing { background: #fefce8; }
+  .sync-bar.syncing .sync-dot { background: var(--amarelo); animation: pulse 1s infinite; }
+  .sync-bar.syncing .sync-label { color: #92400e; }
+  .sync-bar.erro { background: #fef2f2; }
+  .sync-bar.erro .sync-dot { background: var(--vermelho); }
+  .sync-bar.erro .sync-label { color: #991b1b; }
+  .sync-bar.offline { background: #f8fafc; }
+  .sync-bar.offline .sync-dot { background: #94a3b8; }
+  .sync-bar.offline .sync-label { color: #64748b; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  body { padding-bottom: 52px; }
+
   .config-banner {
     background: #fef3c7;
     border: 1.5px solid #f59e0b;
@@ -343,7 +374,11 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="sync-bar offline" id="sync-bar">
+  <div class="sync-dot"></div>
+  <span class="sync-label" id="sync-label">Sem conexão com servidor</span>
+  <span style="margin-left:auto;font-size:11px;color:#94a3b8" id="sync-hora"></span>
+</div>
 
 <script src="config.js"></script>
 <script>
@@ -413,13 +448,28 @@ function tarefaAplicaHoje(t) {
 const chaveHoje = `otavio_${hoje.toISOString().slice(0,10)}`;
 let estado = JSON.parse(localStorage.getItem(chaveHoje) || '{}');
 
+function setSyncStatus(status, msg) {
+  const bar = document.getElementById('sync-bar');
+  const label = document.getElementById('sync-label');
+  const hora = document.getElementById('sync-hora');
+  bar.className = 'sync-bar ' + status;
+  label.textContent = msg;
+  if(status === 'ok') hora.textContent = 'Salvo às ' + new Date().toTimeString().slice(0,5);
+  else if(status === 'syncing') hora.textContent = '';
+}
+
 function salvarEstado() {
   localStorage.setItem(chaveHoje, JSON.stringify(estado));
   if(typeof APPS_SCRIPT_URL !== 'undefined' && APPS_SCRIPT_URL) {
+    setSyncStatus('syncing', 'Sincronizando...');
     fetch(APPS_SCRIPT_URL, {
       method:'POST',
       body: JSON.stringify({ action:'salvar', data: chaveHoje, estado })
-    }).catch(()=>{});
+    })
+    .then(r => r.ok ? setSyncStatus('ok', 'Sincronizado com o servidor') : setSyncStatus('erro', 'Erro ao sincronizar'))
+    .catch(() => setSyncStatus('erro', 'Sem internet — salvo só no celular'));
+  } else {
+    setSyncStatus('offline', 'Salvo localmente (sem servidor)');
   }
 }
 
@@ -634,6 +684,9 @@ function toggleFora(id) {
 // Verificar config
 if(typeof APPS_SCRIPT_URL === 'undefined' || !APPS_SCRIPT_URL) {
   document.getElementById('config-banner').classList.add('visible');
+  setSyncStatus('offline', 'Servidor não configurado');
+} else {
+  setSyncStatus('offline', 'Aguardando primeira ação...');
 }
 
 renderTarefas();
