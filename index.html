@@ -589,6 +589,20 @@ function renderCard(t) {
   const e = estado[t.id] || {};
   const done = e.done;
   const fora = e.fora;
+  const temFoto = e.fotoUrl && !e.fotoUrl.startsWith('local:');
+  const uploadando = e.uploadando;
+
+  let statusFoto = '';
+  if(done && t.foto) {
+    if(uploadando) {
+      statusFoto = `<span class="tag" style="background:#fef3c7;color:#92400e">⏳ Enviando foto...</span>`;
+    } else if(temFoto) {
+      statusFoto = `<span class="tag" style="background:#dcfce7;color:#15803d">📷 Foto enviada</span>`;
+    } else {
+      statusFoto = `<span class="tag" style="background:#fee2e2;color:#991b1b">📷 Sem foto</span>`;
+    }
+  }
+
   return `
   <div class="task-card${done?' done':''}${fora?' fora':''}" id="card-${t.id}">
     <div class="task-main">
@@ -596,30 +610,28 @@ function renderCard(t) {
       <div class="task-info">
         <div class="task-name">${t.nome}</div>
         <div class="task-meta">
-          ${t.foto ? '<span class="tag tag-foto">📷 foto</span>' : ''}
+          ${t.foto && !done ? '<span class="tag tag-foto">📷 foto</span>' : ''}
+          ${statusFoto}
           ${t.valorSemanal ? '<span class="tag" style="background:#ede9fe;color:#6d28d9">📅 R$ 10 na semana</span>' : ''}
           <span class="tag tag-freq">${freqLabel(t.freq)}</span>
         </div>
       </div>
       <div class="task-valor${done?' done-val':''}">${t.valorSemanal ? (done && hoje.getDay()===0 && valorLeituraHoje()>0 ? formatBRL(10) : '—') : formatBRL(t.valor)}</div>
     </div>
-    ${e.fotoUrl && !e.fotoUrl.startsWith('local:') && !e.fotoUrl.startsWith('blob:') ? `
+    ${temFoto ? `
     <div class="foto-preview visible">
       <img src="${e.fotoUrl}" alt="Comprovação">
-    </div>` : e.fotoUrl ? `
-    <div class="foto-preview visible" id="preview-wrap-${t.id}">
-      <img id="preview-${t.id}" src="" alt="Comprovação">
     </div>` : ''}
     <div class="task-actions">
       ${!fora ? (done ? `
-        <button class="btn btn-desfazer" onclick="desfazer('${t.id}')">↩ Desfazer</button>
-      ` : (t.foto ? `
+        ${t.foto && !temFoto && !uploadando ? `
         <input type="file" id="file-${t.id}" accept="image/*" capture="environment" onchange="handleFoto('${t.id}', this)">
         <button class="btn btn-foto" onclick="document.getElementById('file-${t.id}').click()">📷 Enviar foto</button>
-        <button class="btn btn-concluir" onclick="concluirSemFoto('${t.id}')">✓ Feito</button>
+        ` : ''}
+        <button class="btn btn-desfazer" onclick="desfazer('${t.id}')">↩ Desfazer</button>
       ` : `
         <button class="btn btn-concluir" onclick="concluir('${t.id}')">✓ Marcar como feito</button>
-      `)) : ''}
+      `) : ''}
       <button class="btn btn-fora${fora?' ativo':''}" onclick="toggleFora('${t.id}')" title="Fora de casa">
         ${fora ? '🏠 Em casa' : '✈️ Fora'}
       </button>
@@ -649,17 +661,14 @@ function concluirSemFoto(id) {
 async function handleFoto(id, input) {
   const file = input.files[0];
   if(!file) return;
-  const card = document.getElementById('card-'+id);
-  card.classList.add('uploading');
+  estado[id] = { ...estado[id], uploadando: true };
+  renderTarefas();
   showToast('📤 Enviando foto...');
-  
-  // Show local preview immediately
-  const blobUrl = URL.createObjectURL(file);
-  estado[id] = { ...estado[id], fotoUrl: blobUrl };
-  
   const url = await uploadFoto(id, file);
-  concluir(id, url || blobUrl);
-  card.classList.remove('uploading');
+  estado[id] = { ...estado[id], fotoUrl: url || null, uploadando: false };
+  salvarEstado();
+  renderTarefas();
+  showToast(url ? '📷 Foto enviada!' : '⚠️ Erro no envio da foto');
 }
 
 function desfazer(id) {
